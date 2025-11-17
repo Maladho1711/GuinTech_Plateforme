@@ -1,4 +1,4 @@
-# Dev & Tech - Plateforme Communautaire
+GuinTech_Plateforme
 
 Plateforme web communautaire complète pour la collaboration, la gestion de projets, la communication et le partage de ressources.
 
