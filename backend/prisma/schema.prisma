@@ -1,0 +1,206 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  member
+  admin
+  super_admin
+}
+
+enum ProjectStatus {
+  planning
+  in_progress
+  completed
+  on_hold
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      UserRole @default(member)
+  avatar    String?
+  bio       String?
+  skills    String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  managedProjects Project[] @relation("ProjectManager")
+  projectMembers ProjectMember[]
+  messages       Message[]
+  posts          Post[]
+  comments       Comment[]
+  events         Event[]
+  tasks          Task[]
+  files          File[]
+
+  @@map("users")
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  title       String
+  description String
+  status      ProjectStatus @default(planning)
+  managerId   String
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  manager  User            @relation("ProjectManager", fields: [managerId], references: [id])
+  members  ProjectMember[]
+  tasks    Task[]
+  messages Message[]
+  files    File[]
+  events   Event[]
+
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+  projectId String
+  userId    String
+  role      String   @default("member")
+  joinedAt  DateTime @default(now())
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+model Task {
+  id          String        @id @default(uuid())
+  title       String
+  description String?
+  status      String        @default("todo")
+  priority    String        @default("medium")
+  projectId   String
+  assignedToId String?
+  dueDate     DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignedTo User?  @relation(fields: [assignedToId], references: [id])
+
+  @@map("tasks")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  projectId String?
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id])
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id])
+  comments Comment[]
+
+  @@map("posts")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("comments")
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  projectId   String?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id])
+
+  @@map("events")
+}
+
+model File {
+  id          String   @id @default(uuid())
+  name        String
+  url         String
+  size        Int
+  mimeType    String
+  projectId   String?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id])
+
+  @@map("files")
+}
+
+model Sponsor {
+  id          String   @id @default(uuid())
+  name        String
+  logo        String
+  link        String
+  description String?
+  shortDescription String?
+  scope       String?
+  startDate   DateTime?
+  endDate     DateTime?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("sponsors")
+}
+
